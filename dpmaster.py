@@ -48,5 +48,5 @@ def sv_list():
         else:
             hidden_sv += 1
     if hidden_sv:
-        message += '+{} servers with players'.format(hidden_sv)
+        message += '+{} server(s) with players'.format(hidden_sv)
     return message

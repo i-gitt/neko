@@ -33,8 +33,14 @@ async def sv_update():
         except discord.errors.NotFound:
             print('Message deleted. Creating new one.')
             message = None
-        except:
-            break
+        except discord.errors.HTTPException:
+            print('HTTP exception occured during server list update.')
+            await asyncio.sleep(60)
+        except Exception as e:
+            print(e)
+            print('Exception while trying to send/edit server message'
+                  ' update.')
+            #  break
 
 async def forum_feed():
     await neko.wait_until_ready()
@@ -43,10 +49,12 @@ async def forum_feed():
         try:
             for text in oaforum.feed():
                 await neko.send_message(channel, text)
-            await asyncio.sleep(600)
+            await asyncio.sleep(300)
+        except discord.errors.HTTPException:
+            print('HTTP exception occured while getting form feed.')
         except Exception as e:
             print(e)
-            print('Exception while getting forum feed')
+            print('Exception while getting forum feed.')
 
 @neko.event
 async def on_ready():
@@ -71,5 +79,10 @@ async def on_error():
     print('Error occured.')
 
 neko.loop.create_task(sv_update())
-neko.loop.create_task(forum_feed())
-neko.run(token)
+#  neko.loop.create_task(forum_feed())
+
+try:
+    neko.run(token)
+except Exception as e:
+    print(e)
+    print('Exception occured in the main loop.')

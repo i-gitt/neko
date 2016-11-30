@@ -1,5 +1,7 @@
-from lxml import etree
+from os import environ
 from re import sub
+from lxml import etree
+import time
 import configparser
 
 def parse_html(string):
@@ -38,6 +40,8 @@ def feed():
         print('Error loading forum page.')
         return
 
+    environ['TZ'] = 'US/Central'
+    time.tzset()
     messages = []
     for post in reversed(tree.xpath('//recent-post')):
         post_id = int(post.xpath('./id/text()')[0])
@@ -46,7 +50,7 @@ def feed():
                 board = post.xpath('./board/name/text()')[0]
                 topic = post.xpath('./topic/subject/text()')[0]
                 poster = post.xpath('./poster/name/text()')[0]
-                time = post.xpath('./time/text()')[0]
+                post_time = post.xpath('./time/text()')[0]
                 link = post.xpath('./link/text()')[0]
                 body = post.xpath('./body/text()')[0]
 
@@ -57,8 +61,11 @@ def feed():
                 elif board == 'Idea pit':
                     board = ':pencil:' + board
 
+                post_time = post_time.replace('Today at',
+                        time.strftime('%B %d, %Y'))
+
                 message = ('[' + board + '] **' + topic + '**\n'
-                    'by _' + poster + '_ on ' + time + '\n'
+                    'by _' + poster + '_ on ' + post_time + '\n'
                     '<' + link + '>\n'
                     '```\n' + parse_html(body) + '\n```')
                 messages.append(message)
