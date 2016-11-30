@@ -1,6 +1,3 @@
-#!/usr/bin/python
-
-from requests import get
 from lxml import etree
 
 class Server:
@@ -14,21 +11,12 @@ def escape_chars(string):
     return string.strip()
 
 def sv_list():
-    page = None
-    try:
-        url = 'http://dpmaster.deathmask.net'
-        params = {'game': 'openarena', 'xml': '1', 'nocolors': '1'}
-        page = get(url, params).content
-    except:
-        #  print('Error loading dpmaster page.')
-        return
-
     tree = None
     try:
-        tree = etree.fromstring(page)
+        url = 'http://dpmaster.deathmask.net/?game=openarena&xml=1&nocolors=1'
+        tree = etree.parse(url)
         #  tree = etree.parse('test/dpmaster.xml') # DEBUG
     except:
-        print('Error while parsing xml.')
         return
 
     servers = []
@@ -62,5 +50,3 @@ def sv_list():
     if hidden_sv:
         message += '+{} servers with players'.format(hidden_sv)
     return message
-
-#  print(sv_list())
