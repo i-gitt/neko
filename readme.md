@@ -1,41 +1,37 @@
 Neko
 ====
 
-Neko is a Discord bot for OpenArena server. Currently it only displays
-OpenArena server list and players, and performs some usual functions found in
-other Discord bots.
+Neko is a Discord bot for OpenArena server. It displays OpenArena server list
+information and and keeps statistics of players.
 
-You can find info about the OpenArena game at http://www.openarena.ws. To join
-the Discord server you can use this invite link: https://discord.me/openarena.
+You can find info about the OpenArena game at http://www.openarena.ws.
 
 Running
 -------
 
-Use the `run.sh` script.
+To run the program you need to create a Python virtual environment and install
+necessary libraries with pip.
+
+Commands
+--------
+
+Neko accepts the following commands in private chat:
+
+.seen <str> -- shows when a player(s) last appeared in game that contain <str>
+in their name
+
+.sv <str> -- find running servers that contain <str> in their name
+
 
 Requirements
 ------------
 
-- python 3.5
+- python >3.5
 - discord.py -- https://github.com/Rapptz/discord.py
 - lxml -- http://lxml.de
 
 Testing
 -------
 
-To test this bot on your own Discord server:
-
-- go to https://discordapp.com/developers/applications/me and
-  choose `New Applicatons`
-- name the bot, choose `Create Application`
-- choose `Create a Bot User`
-- uncheck the `Public Bot` (recommended)
-- under `APP BOT USER` click on the reveal token. Use this token with neko.ini
-  file.
-- Create a discord server and invite the bot with this link (replace
-  Client_ID with your bot Client ID):
-  https://discordapp.com/oauth2/authorize?client_id=Client_ID&scope=bot&permissions=0
-- copy channel ID's to neko.ini (they can be found on web app by choosing
-  a channel on your Discord server and looking at the link
-  https://discordapp.com/channels/<server_id>/<channel_id>)
-- run the app
+To test this bot on your own Discord server create a new bot and invite it to
+your own server.
