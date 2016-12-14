@@ -1,3 +1,7 @@
 __pycache__
 neko.ini
 neko_test.ini
+run.sh
+notes.md
+stats.pickle
+stats.pickle.bak
