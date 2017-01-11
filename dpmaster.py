@@ -12,7 +12,7 @@ def escape_chars(string):
         string = string.replace(i, j)
     return string.strip()
 
-def sv_list(track_players = False):
+def sv_list(track_players = True):
     tree = None
     try:
         url = 'http://dpmaster.deathmask.net/?game=openarena&xml=1&nocolors=1'

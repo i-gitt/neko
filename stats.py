@@ -71,7 +71,7 @@ def Load():
             # backup
             try:
                 shutil.copy2('stats.pickle', 'stats.pickle.bak')
-            except Exception as e
+            except Exception as e:
                 print(e)
         with open(loadfn, 'rb') as f:
             players = pickle.load(f)
