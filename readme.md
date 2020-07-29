@@ -8,30 +8,27 @@ other Discord bots.
 You can find info about the OpenArena game at http://www.openarena.ws. To join
 the Discord server you can use this invite link: https://discord.me/openarena.
 
-Running
--------
+Setup
+-----
 
-Use the `run.sh` script.
+Run the `install.sh` script to download and build `qstat`. Use the
+`neko.service` to run with `systemd`.
 
 Requirements
 ------------
 
-- python 3.5
 - discord.py -- https://github.com/Rapptz/discord.py
-- lxml -- http://lxml.de
+- qstat -- https://github.com/multiplay/qstat
 
 Testing
 -------
 
 To test this bot on your own Discord server:
 
-- go to https://discordapp.com/developers/applications/me and
-  choose `New Applicatons`
-- name the bot, choose `Create Application`
+- create a `New Application` at https://discord.com/developers/applications
 - choose `Create a Bot User`
 - uncheck the `Public Bot` (recommended)
-- under `APP BOT USER` click on the reveal token. Use this token with neko.ini
-  file.
+- under Bot click on the reveal token. Use this token with neko.ini file.
 - Create a discord server and invite the bot with this link (replace
   Client_ID with your bot Client ID):
   https://discordapp.com/oauth2/authorize?client_id=Client_ID&scope=bot&permissions=0

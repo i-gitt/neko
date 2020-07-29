@@ -1,119 +1,127 @@
 #!/usr/bin/python
 
-import discord
 import asyncio
-import configparser
-import dpmaster
-import sys
-#  from aiohttp import TCPConnector
+import config
+import discord
+import json
+import subprocess
+from datetime import datetime
 
-message = None
 
-try:
-    neko = discord.Client() # (connector=TCPConnector(keepalive_timeout=120))
+def server_list():
 
-    configfile = 'neko.ini'
-    config = configparser.ConfigParser()
-    config.read(configfile)
-    token = config['neko']['token']
-    ch_general = config['neko']['general']
-    ch_info = config['neko']['info']
-    owner = config['neko']['owner']
+    args = ['./qstat']
 
-    ch_svlist  = config['svupdate']['channel']
-    message_id = config['svupdate']['messages']
-    sleep_time = int(config['svupdate']['sleep'])
+    args.append('-cfg')
+    args.append('qstat.cfg')
+    args.append('-u')
+    args.append('-ne')
+    args.append('-P')
+    args.append('-json')
+    args.append('-openarenam')
+    args.append('dpmaster.deathmask.net')
 
-    #  stats.Load()
-except Exception as e:
-    print('Error during initialization: ', e)
+    # Master servers list alternative: master.ioquake3.org
 
-async def sv_update():
+    completeProcess = subprocess.run(args, capture_output=True)
+
+    servers = json.loads(completeProcess.stdout)
+
+    # filter bots
+
+    for server in servers:
+        players = server.get('players', [])
+        server['players'] = [p for p in players if 0 < p.get('ping') < 800]
+
+    # filter names
+
+    name_blacklist = ['unnamedplayer']
+
+    for server in servers:
+        players = server.get('players', [])
+        server['players'] = [p for p in players
+                             if p.get('name').lower() not in name_blacklist]
+
+    # filter empty servers
+
+    servers = [s for s in servers if s.get('players')]
+
+    # sort by player count (after filtering)
+
+    servers = sorted(servers, key=lambda sv: len(sv.get('players')),
+                     reverse=True)
+
+    return servers
+
+
+def markdown_strip(value):
+    md_special_chars = ['_', '*', '>', '`']
+    for char in md_special_chars:
+        value = value.replace(char, '\\' + char)
+    return value.strip()
+
+
+def build_message():
+    servers = server_list()
+
+    message = '\n__ **OpenArena** server list (*{}*  players online) __\n\n' \
+        .format(sum([len(sv.get('players')) for sv in servers]))
+
+    for sv in servers:
+        new_msg = '**{}** ({}) [map: {}] has `{}` player{}:\n' \
+            .format(markdown_strip(sv.get('name')),
+                    markdown_strip(sv.get('hostname')),
+                    markdown_strip(sv.get('map')),
+                    len(sv.get('players')),
+                    's' if len(sv.get('players')) > 1 else '')
+        new_msg += '|\t {} \t|\n\n'.format('\t|\t'.join(
+            [markdown_strip(p.get('name')) for p in sv.get('players')]))
+
+        if (len(message + new_msg) < 1970):
+            message += new_msg
+
+    message += datetime.utcnow().strftime('%d %b %Y %H:%M (UTC)')
+
+    return message
+
+
+async def create_new_message(channel):
+    try:
+        print('Removing previous messages from channel.')
+        await channel.purge(limit=5, check=(lambda m: m.author == neko.user))
+        print('Creating new message for server list.')
+        return await channel.send(build_message())
+        await asyncio.sleep(config.svlist_sleep_time)
+    except Exception as e:
+        print('Error creating new message: ', e)
+
+
+async def server_list_update(neko):
     await neko.wait_until_ready()
 
-    global message
+    channel = neko.get_channel(config.svlist_channel)
+
     message = None
-    channel = neko.get_channel(ch_svlist)
-    if message_id:
-        #  print('Message (ID={}) already exists.'.format(message_id) +
-                #  ' Overwriting...')
-        try:
-            message = await neko.get_message(channel, message_id)
-        except:
-            print('Couldn\'t retrieve message with id={}'.format(message_id))
 
-    if not message:
-        try:
-            print('Creating new message for server list...')
-            text = dpmaster.sv_list()
-            if not text: text = '-'
-            message = await neko.send_message(channel, text)
-            config.set('svupdate', 'messages', message.id)
-            with open(configfile, 'w') as f: config.write(f)
-        except Exception as e:
-            print('Error creating new message: ', e)
+    try:
+        message = await channel.fetch_message(channel.last_message_id)
+    except discord.NotFound:
+        message = await create_new_message(channel)
+    except Exception as e:
+        print('Could not retrieve last channel message', e)
 
-    #  assert message
-
-    while not neko.is_closed:
+    while True:
         try:
-            text = dpmaster.sv_list()
-            if not text: text = '-'
-            await neko.edit_message(message, text)
-            await asyncio.sleep(sleep_time)
-        except discord.errors.NotFound:
-            print('Message deleted. Creating new one...')
-            message = await neko.send_message(channel, text)
-            config.set('svupdate', 'messages', message.id)
-            with open(configfile, 'w') as f: config.write(f)
-        except discord.errors.HTTPException:
+            await message.edit(content=build_message())
+        except discord.NotFound:
+            message = await create_new_message(channel)
+        except discord.HTTPException:
             print('HTTP exception occured during server list update.')
-            await asyncio.sleep(60)
         except Exception as e:
             print('Exception while editing server message update: ', e)
 
-@neko.event
-async def on_ready():
-    print('Logged in as', neko.user.name)
+        await asyncio.sleep(config.svlist_sleep_time)
 
-@neko.event
-async def on_member_join(member):
-    channel = neko.get_channel(ch_general)
-    info_channel = neko.get_channel(ch_info)
-    text = 'Welcome to the ' + channel.server.name + ' server, ' \
-            + member.mention + '! Check out the ' + info_channel.mention \
-            + ' channel.\n' + 'Official OpenArena game download: ' \
-            + '<http://openarena.ws/download.php?view.4>'
-
-    try:
-        await neko.send_message(channel, text)
-    except Exception as e:
-        print('Error while sending welcome message:\n', e)
-
-@neko.event
-async def on_resume():
-    print('Resuming...')
-
-@neko.event
-async def on_error():
-    print('Error occured.')
-
-@neko.event
-async def on_message(message2):
-    global message
-    try:
-        if message2.channel.is_private:
-            if message2.author.id == owner:
-                if message2.content == '.shutdown' or message2.content == '.s':
-                    await neko.edit_message(message, '-')
-                    neko.logout()
-                    sys.exit()
-    except Exception as e:
-        print('Error while executing command\n', e)
-
-# create tasks and run main loop
-try:
-    neko.loop.create_task(sv_update())
-    neko.run(token)
-except Exception as e:
-    print('Error in the main loop:\n', e)
+neko = discord.Client()
+neko.loop.create_task(server_list_update(neko))
+neko.run(config.token)

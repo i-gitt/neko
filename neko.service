@@ -1,0 +1,11 @@
+[Unit]
+Description=Neko Discord Bot
+
+[Service]
+Type=simple
+Restart=always
+WorkingDirectory=/root/neko
+ExecStart=/root/neko/env/bin/python neko.py
+
+[Install]
+WantedBy=multi-user.target
