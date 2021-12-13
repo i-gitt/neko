@@ -5,79 +5,61 @@ import config
 import discord
 import json
 import subprocess
+import string
 from datetime import datetime
-
-
-def server_list():
-
-    args = ['./qstat']
-
-    args.append('-cfg')
-    args.append('qstat.cfg')
-    args.append('-u')
-    args.append('-ne')
-    args.append('-P')
-    args.append('-json')
-    args.append('-openarenam')
-    args.append('dpmaster.deathmask.net')
-
-    # Master servers list alternative: master.ioquake3.org
-
-    completeProcess = subprocess.run(args, capture_output=True)
-
-    servers = json.loads(completeProcess.stdout)
-
-    # filter bots
-
-    for server in servers:
-        players = server.get('players', [])
-        server['players'] = [p for p in players if 0 < p.get('ping') < 800]
-
-    # filter names
-
-    name_blacklist = ['unnamedplayer']
-
-    for server in servers:
-        players = server.get('players', [])
-        server['players'] = [p for p in players
-                             if p.get('name').lower() not in name_blacklist]
-
-    # filter empty servers
-
-    servers = [s for s in servers if s.get('players')]
-
-    # sort by player count (after filtering)
-
-    servers = sorted(servers, key=lambda sv: len(sv.get('players')),
-                     reverse=True)
-
-    return servers
+from oastat import *
 
 
 def markdown_strip(value):
+    value = value.encode("ascii", "ignore").decode()
+
+    pat = "\^[A-Za-z0-9]"
+    value = re.sub(pat, '',value)
     md_special_chars = ['_', '*', '>', '`']
     for char in md_special_chars:
         value = value.replace(char, '\\' + char)
+    if(value == ""):
+        value = "UnnamedPlayer"
     return value.strip()
 
 
 def build_message():
-    servers = server_list()
+#    servers = server_list()
 
-    message = '\n__ **OpenArena** server list (*{}*  players online) __\n\n' \
-        .format(sum([len(sv.get('players')) for sv in servers]))
+    servers = getServerArray()
+    servers = sorted(servers, key=lambda x: x.num_humans(), reverse=True)
+    message = '\n__ **OpenArena** server list __\n\n'
+
 
     for sv in servers:
+        players = sv.likely_human_players()
+#        players = sorted(players, key=lambda p: p.score, reverse=True)
+        servername = markdown_strip(sv.name())
+        if('.eu' in servername):
+            continue
+        elif("lasico.de" in servername):
+            servername = markdown_strip(sv.name())[9:]
+        else:
+            servername = markdown_strip(sv.name())
         new_msg = '**{}** ({}) [map: {}] has `{}` player{}:\n' \
-            .format(markdown_strip(sv.get('name')),
-                    markdown_strip(sv.get('hostname')),
-                    markdown_strip(sv.get('map')),
-                    len(sv.get('players')),
-                    's' if len(sv.get('players')) > 1 else '')
-        new_msg += '|\t {} \t|\n\n'.format('\t|\t'.join(
-            [markdown_strip(p.get('name')) for p in sv.get('players')]))
+            .format(servername,
+                    markdown_strip(sv.saddr()),
+                    markdown_strip(sv.map()),
+                    len(players),
+                    's' if len(players) > 1 else '')
 
-        if (len(message + new_msg) < 1970):
+        if(servername == ':F deathmatch'):
+            new_msg += '|\t {} \t|\n\n'.format('\t|\t'.join([markdown_strip(p.name[9:]) for p in players]))
+        elif(servername == ':F normal ctf for stupids'):
+           new_msg += '|\t {} \t|\n\n'.format('\t|\t'.join([markdown_strip(p.name[13:]) for p in players]))
+        elif(servername == ':F Insta'):
+            new_msg += '|\t {} \t|\n\n'.format('\t|\t'.join([markdown_strip(p.name[6:]) for p in players]))
+        elif(servername == ':F ctf for GENIUSES'):
+            new_msg += '|\t {} \t|\n\n'.format('\t|\t'.join([markdown_strip(p.name[13:]) for p in players]))
+        else:
+            new_msg += '|\t {} \t|\n\n'.format('\t|\t'.join([markdown_strip(p.name) for p in players]))
+
+        if (len(message + new_msg) < 1970 and len(players)>0):
             message += new_msg
 
     message += datetime.utcnow().strftime('%d %b %Y %H:%M (UTC)')
@@ -121,6 +103,7 @@ async def server_list_update(neko):
             print('Exception while editing server message update: ', e)
 
         await asyncio.sleep(config.svlist_sleep_time)
+
 
 neko = discord.Client()
 neko.loop.create_task(server_list_update(neko))
