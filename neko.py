@@ -24,16 +24,14 @@ def markdown_strip(value):
 
 
 def build_message():
-#    servers = server_list()
 
-    servers = getServerArray()
+    servers = getServerArray()  
     servers = sorted(servers, key=lambda x: x.num_humans(), reverse=True)
     message = '\n__ **OpenArena** server list __\n\n'
 
 
     for sv in servers:
         players = sv.likely_human_players()
-#        players = sorted(players, key=lambda p: p.score, reverse=True)
         servername = markdown_strip(sv.name())
         if('.eu' in servername):
             continue
