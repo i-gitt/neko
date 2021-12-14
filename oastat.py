@@ -96,7 +96,6 @@ class ServerInfo:
             return self._getinfostr(b'hostname')
         except:
             return ""
-#ArenaString(b"")
 
     def _getinfostr(self, key):
         try:
@@ -744,6 +743,5 @@ def getServerArray():
 
     server_addresses = query_master(addrs, 500, 0, False)
     return  query_servers(server_addresses)
-    # return server_infos
 
 
