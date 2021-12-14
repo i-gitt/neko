@@ -8,17 +8,18 @@ other Discord bots.
 You can find info about the OpenArena game at http://www.openarena.ws. To join
 the Discord server you can use this invite link: https://discord.me/openarena.
 
+This version includes Code of https://github.com/rdntcntrl/oaquery.
+
 Setup
 -----
 
-Run the `install.sh` script to download and build `qstat`. Use the
-`neko.service` to run with `systemd`.
+Run the `install.sh` script to download required files (discord.py).
+Use the `neko.service` to run with `systemd` or run.sh
 
 Requirements
 ------------
 
 - discord.py -- https://github.com/Rapptz/discord.py
-- qstat -- https://github.com/multiplay/qstat
 
 Testing
 -------
