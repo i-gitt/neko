@@ -10,6 +10,9 @@ the Discord server you can use this invite link: https://discord.me/openarena.
 
 This version includes Code of https://github.com/rdntcntrl/oaquery.
 
+Running since 12/2021 on #servers in the Official Open Arena Discord 
+https://discord.gg/n3dTmzM
+
 Setup
 -----
 
